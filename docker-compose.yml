@@ -1,0 +1,66 @@
+# Version of Docker-compose
+version: "3.8"
+services:
+  # Service name
+  react:
+    build:
+      context: ./client
+      dockerfile: react.dockerfile
+    volumes:
+      - ./client:/client
+      - /client/node_modules
+    ports:
+      - 3000:3000
+    environment:
+      - CHOKIDAR_USEPOLLING=true
+    depends_on:
+      - node
+  node:
+    # Creating a custom image
+    build:
+      # Location to the Dockerfile
+      context: .
+      # Name of the Dockerfile
+      dockerfile: Dockerfile
+    ports:
+      # HOST_PORT:CONTAINER_PORT
+      - 5000:5000
+    environment:
+      - PORT=5000
+      # For security, specify a username and password as environmental variables
+      # Username for the mongo database
+      - MONGO_INITDB_ROOT_USERNAME=mern
+      # Password for the mongo database
+      - MONGO_INITDB_ROOT_PASSWORD=merndocker
+    # Enables the mongo service to start before the node service
+    depends_on:
+      - mongo
+    volumes:
+      # Syntax <nameOfVolume>:<directorInDocker>
+      - nodeVolume:/server
+      # ADD THE CONFIGURATION FROM THIS POINT to sync the working directory
+      # for the application to the /app directory in the container
+      - .:/server
+      - /server/node_modules
+  cors:
+    build:
+      context: ./nginx
+      dockerfile: nginx.dockerfile
+    ports:
+      - "4545:80"
+  mongo:
+    # Official mongo image from docker.hub
+    image: mongo
+    environment:
+      # Username for the mongo database
+      - MONGO_INITDB_ROOT_USERNAME=mern
+      # Password for the mongo database
+      - MONGO_INITDB_ROOT_PASSWORD=merndocker
+    volumes:
+      # <nameOfVolume>:<directorInDocker>
+      - mongoDB:/data/db    
+# Making the node service volume accessible to other services.
+volumes:
+  # Declaring the node service volume.
+  nodeVolume:
+  mongoDB:
